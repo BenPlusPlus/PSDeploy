@@ -56,7 +56,7 @@ foreach($Map in $Deployment)
                     Write-Verbose "`tThumbprint: $($certificate.Thumbprint) "
                 }
                 $tempFolder = New-Item -ItemType Directory -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName()))
-                Invoke-Robocopy -Path $Map.Source -Destination $tempFolder -ArgumentList '/E','/PURGE'
+                Copy-Folder -Path $Map.Source -Destination $tempFolder -Purge
                 $catFile = New-FileCatalog -Path $tempFolder -CatalogFilePath "$tempFolder\$moduleName.cat"
                 if($certCode){
                     Set-AuthenticodeSignature -Certificate $certCode -FilePath $catFile.FullName > $null

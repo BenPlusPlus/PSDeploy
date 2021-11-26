@@ -65,8 +65,8 @@ Catch
 # Set up module functions that need to be injected into the remote session.
 $FunctionsToInject = @(
     'Get-Hash',
-    'Invoke-Robocopy',
-    'Start-ConsoleProcess'
+    'Remove-UnmatchedItems',
+    'Copy-Folder'
 )
 $InjectedFunctions = @()
 
@@ -99,18 +99,21 @@ Invoke-Command @PSBoundParameters -ScriptBlock {
             {
                 if($Map.SourceType -eq 'Directory')
                 {
-                    [string[]]$Arguments = "/XO"
-                    $Arguments += "/E"
-                    if($Map.DeploymentOptions.mirror -eq 'True' -or $Using:Mirror)
-                    {
-                        $Arguments += "/PURGE"
+                    if($Map.DeploymentOptions.mirror -eq 'True' -or $Using:Mirror) {
+                        $CopyArgs = @{ExcludeOlder = $true; Purge = $true}
+                    }
+                    else {
+                        $CopyArgs = @{ExcludeOlder = $true}
                     }
 
                     # Resolve PSDrives.
                     $Target = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Target)
 
-                    Write-Verbose "Invoking ROBOCOPY.exe $RemoteSource $Target $Arguments"
-                    Invoke-Robocopy -Path $RemoteSource -Destination $Target -ArgumentList $Arguments
+                    Write-Verbose "Invoking Copy-Folder $RemoteSource $Target $CopyArgs"
+                    if(!(Test-Path -PathType Container -Path $Target)){
+                        New-Item -ItemType Directory -Path $Target -Force
+                    }
+                    Copy-Folder -Path $RemoteSource -Destination $Target @CopyArgs
                 }
                 else
                 {
